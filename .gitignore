@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+build
+dist
+*.tsbuildinfo
+.env
+.env.local
+.env*.local
+mastra.db
+mastra.db-*
+.mastra
+coverage
+.DS_Store
+npm-debug.log*
+supabase/.temp
+supabase/.branches
