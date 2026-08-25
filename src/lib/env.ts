@@ -6,8 +6,7 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   SUPABASE_SECRET_KEY: z.string().min(1),
-  OPENAI_API_KEY: z.string().min(1),
-  AI_MODEL: z.string().min(1).default("openai/gpt-5.1"),
+  AI_MODEL: z.string().min(1).default("google/gemini-3.6-flash"),
   ENABLE_VOICE_INTERVIEW: z
     .string()
     .default("false")

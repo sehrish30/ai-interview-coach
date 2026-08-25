@@ -11,6 +11,19 @@ const prepareSchema = z.object({
   jobDescriptionText: z.string().min(50, "Job description text is too short to analyze").max(20000),
 });
 
+function summarizeWorkflowError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -37,7 +50,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       if (result.status !== "success") {
         await transitionSessionStatus(supabase, id, "failed", {
-          failureReason: result.status === "failed" ? String(result.error) : result.status,
+          failureReason:
+            result.status === "failed" ? summarizeWorkflowError(result.error) : result.status,
         });
         return apiError(502, "preparation_failed", "Interview preparation failed");
       }
@@ -45,7 +59,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json(result.result);
     } catch (workflowError) {
       await transitionSessionStatus(supabase, id, "failed", {
-        failureReason: workflowError instanceof Error ? workflowError.message : String(workflowError),
+        failureReason:
+          workflowError instanceof Error ? workflowError.message : String(workflowError),
       });
       throw workflowError;
     }

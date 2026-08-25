@@ -19,6 +19,30 @@ export default function NewInterviewPage() {
   const [researchEnabled, setResearchEnabled] = useState(false);
   const [resumeText, setResumeText] = useState("");
   const [jobDescriptionText, setJobDescriptionText] = useState("");
+  const [resumeFileName, setResumeFileName] = useState<string | null>(null);
+  const [resumeParseStatus, setResumeParseStatus] = useState<"idle" | "parsing" | "error">("idle");
+  const [resumeParseError, setResumeParseError] = useState<string | null>(null);
+
+  async function handleResumeFile(file: File) {
+    setResumeFileName(file.name);
+    setResumeParseStatus("parsing");
+    setResumeParseError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/resume/parse", { method: "POST", body: formData });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.message ?? "Could not parse this PDF");
+      }
+      setResumeText(body.text);
+      setResumeParseStatus("idle");
+    } catch (err) {
+      setResumeParseStatus("error");
+      setResumeParseError(err instanceof Error ? err.message : "Could not parse this PDF");
+    }
+  }
 
   async function prepare(id: string) {
     const res = await fetch(`/api/sessions/${id}/prepare`, {
@@ -123,8 +147,24 @@ export default function NewInterviewPage() {
           </label>
         </div>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Resume (paste text)
+        <div className="flex flex-col gap-1 text-sm">
+          <div className="flex items-center justify-between">
+            <span>Resume (paste text or upload PDF)</span>
+            <label className="cursor-pointer rounded-md border border-(--border) bg-(--surface) px-3 py-1 text-xs font-medium text-(--accent)">
+              {resumeParseStatus === "parsing" ? "Parsing…" : "Upload PDF"}
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                className="hidden"
+                disabled={resumeParseStatus === "parsing"}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) void handleResumeFile(file);
+                }}
+              />
+            </label>
+          </div>
           <textarea
             required
             minLength={50}
@@ -133,7 +173,16 @@ export default function NewInterviewPage() {
             onChange={(e) => setResumeText(e.target.value)}
             className="rounded-md border border-(--border) bg-transparent px-3 py-2"
           />
-        </label>
+          {resumeFileName && resumeParseStatus === "idle" && (
+            <p className="text-xs text-black/50 dark:text-white/50">
+              Parsed {resumeFileName} — {resumeText.length.toLocaleString()} characters. Feel free to
+              edit before continuing.
+            </p>
+          )}
+          {resumeParseStatus === "error" && (
+            <p className="text-xs text-red-600 dark:text-red-400">{resumeParseError}</p>
+          )}
+        </div>
 
         <label className="flex flex-col gap-1 text-sm">
           Job description (paste text)

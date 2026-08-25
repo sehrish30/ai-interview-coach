@@ -1,22 +1,65 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f7f8;
-  --foreground: #111318;
-  --accent: #4f46e5;
-  --border: #e2e2e6;
+  --background: #eef6fd;
+  --background-glow: radial-gradient(
+      70rem 40rem at 12% -10%,
+      rgba(33, 150, 243, 0.16),
+      transparent 60%
+    ),
+    radial-gradient(50rem 30rem at 100% 0%, rgba(144, 202, 249, 0.22), transparent 55%);
+  --foreground: #0a2540;
+  --accent: #0d47a1;
+  --accent-soft: #2196f3;
+  --border: rgba(13, 71, 161, 0.16);
+  --surface: rgba(255, 255, 255, 0.6);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b0c10;
-    --foreground: #e9e9ec;
-    --accent: #818cf8;
-    --border: #22232a;
+    --background: #050b16;
+    --background-glow: radial-gradient(
+        60rem 34rem at 10% -10%,
+        rgba(33, 150, 243, 0.22),
+        transparent 60%
+      ),
+      radial-gradient(46rem 30rem at 100% 0%, rgba(13, 71, 161, 0.35), transparent 55%);
+    --foreground: #e3f2fd;
+    --accent: #2196f3;
+    --accent-soft: #90caf9;
+    --border: rgba(144, 202, 249, 0.16);
+    --surface: rgba(144, 202, 249, 0.06);
   }
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background-color: var(--background);
+  background-image: var(--background-glow);
+  background-attachment: fixed;
   color: var(--foreground);
+}
+
+a,
+button {
+  transition:
+    filter 0.15s ease,
+    opacity 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+a:hover,
+button:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
+button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: #04101f;
 }
