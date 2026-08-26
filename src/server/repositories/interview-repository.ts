@@ -135,6 +135,42 @@ export async function saveCoaching(
   return data;
 }
 
+export interface AnswerDetail {
+  question: Database["public"]["Tables"]["interview_questions"]["Row"];
+  answer: Database["public"]["Tables"]["candidate_answers"]["Row"];
+  evaluation: Database["public"]["Tables"]["answer_evaluations"]["Row"] | null;
+  coaching: Database["public"]["Tables"]["coaching_feedback"]["Row"] | null;
+}
+
+/** Fetches everything to render a read-only "review this past answer" view:
+ * the question asked, what was answered, its evaluation, and (if this
+ * session is in Practice mode) its per-answer coaching. Returns null if the
+ * question hasn't been answered yet. */
+export async function getAnswerDetailForQuestion(
+  client: Client,
+  questionId: string,
+): Promise<AnswerDetail | null> {
+  const { data: answer, error: answerError } = await client
+    .from("candidate_answers")
+    .select("*")
+    .eq("question_id", questionId)
+    .maybeSingle();
+  if (answerError) throw answerError;
+  if (!answer) return null;
+
+  const [{ data: question, error: questionError }, { data: evaluation, error: evaluationError },
+    { data: coaching, error: coachingError }] = await Promise.all([
+    client.from("interview_questions").select("*").eq("id", questionId).single(),
+    client.from("answer_evaluations").select("*").eq("answer_id", answer.id).maybeSingle(),
+    client.from("coaching_feedback").select("*").eq("answer_id", answer.id).maybeSingle(),
+  ]);
+  if (questionError) throw questionError;
+  if (evaluationError) throw evaluationError;
+  if (coachingError) throw coachingError;
+
+  return { question, answer, evaluation, coaching };
+}
+
 export interface AnswerWithEvaluation {
   answer: Database["public"]["Tables"]["candidate_answers"]["Row"];
   question: Database["public"]["Tables"]["interview_questions"]["Row"];

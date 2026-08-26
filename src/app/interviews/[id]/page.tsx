@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, use as usePromise } from "react";
 import { useRouter } from "next/navigation";
 import { QuestionProgressSidebar } from "@/components/interview/question-progress-sidebar";
 import { AnswerDetailModal } from "@/components/interview/answer-detail-modal";
+import { PriorityBadge } from "@/components/interview/priority-badge";
 
 interface Question {
   id: string;
@@ -26,8 +27,10 @@ interface TurnResult {
   coaching: {
     positiveFeedback: string[];
     improvementAreas: string[];
+    improvedAnswerOutline: string[];
     sampleImprovedAnswer: string;
     practiceExercise: string;
+    priority: "low" | "medium" | "high";
   } | null;
   nextQuestion: Question | null;
 }
@@ -168,7 +171,10 @@ export default function InterviewRoomPage({ params }: { params: Promise<{ id: st
         sessionId={id}
       >
         <main className="mx-auto max-w-2xl px-6 py-12">
-          <h2 className="mb-1 text-lg font-semibold">Answer score: {lastResult.answerScore}/100</h2>
+          <div className="mb-1 flex items-center gap-2">
+            <h2 className="text-lg font-semibold">Answer score: {lastResult.answerScore}/100</h2>
+            <PriorityBadge priority={c.priority} />
+          </div>
           <div className="mt-4 flex flex-col gap-4 text-sm">
             {c.positiveFeedback.length > 0 && (
               <div>
@@ -188,6 +194,16 @@ export default function InterviewRoomPage({ params }: { params: Promise<{ id: st
                     <li key={i}>{f}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+            {c.improvedAnswerOutline.length > 0 && (
+              <div>
+                <p className="font-medium">Suggested outline for a stronger answer</p>
+                <ol className="list-inside list-decimal">
+                  {c.improvedAnswerOutline.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ol>
               </div>
             )}
             <div>

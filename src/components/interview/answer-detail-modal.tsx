@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PriorityBadge } from "@/components/interview/priority-badge";
 
 interface AnswerDetail {
   question: {
@@ -16,8 +17,10 @@ interface AnswerDetail {
     weaknesses: string[];
   } | null;
   coaching: {
+    improvedAnswerOutline: string[];
     sampleImprovedAnswer: string;
     practiceExercise: string;
+    priority: "low" | "medium" | "high";
   } | null;
 }
 
@@ -129,6 +132,20 @@ export function AnswerDetailModal({
 
             {detail.coaching ? (
               <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <p className="font-medium">Coaching</p>
+                  <PriorityBadge priority={detail.coaching.priority} />
+                </div>
+                {detail.coaching.improvedAnswerOutline.length > 0 && (
+                  <>
+                    <p className="mb-1 font-medium">Suggested outline for a stronger answer</p>
+                    <ol className="mb-2 list-inside list-decimal">
+                      {detail.coaching.improvedAnswerOutline.map((step, i) => (
+                        <li key={i}>{step}</li>
+                      ))}
+                    </ol>
+                  </>
+                )}
                 <p className="mb-1 font-medium">A stronger answer might sound like</p>
                 <p className="rounded-md border border-(--border) p-3">
                   {detail.coaching.sampleImprovedAnswer}
