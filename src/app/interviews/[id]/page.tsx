@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { QuestionProgressSidebar } from "@/components/interview/question-progress-sidebar";
 import { AnswerDetailModal } from "@/components/interview/answer-detail-modal";
 import { PriorityBadge } from "@/components/interview/priority-badge";
+import { ScoreBadge } from "@/components/interview/score-badge";
+import { FeedbackList } from "@/components/interview/feedback-list";
 
 interface Question {
   id: string;
@@ -171,52 +173,63 @@ export default function InterviewRoomPage({ params }: { params: Promise<{ id: st
         sessionId={id}
       >
         <main className="mx-auto max-w-2xl px-6 py-12">
-          <div className="mb-1 flex items-center gap-2">
-            <h2 className="text-lg font-semibold">Answer score: {lastResult.answerScore}/100</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">Answer feedback</h2>
+            <ScoreBadge score={lastResult.answerScore} />
             <PriorityBadge priority={c.priority} />
           </div>
-          <div className="mt-4 flex flex-col gap-4 text-sm">
-            {c.positiveFeedback.length > 0 && (
-              <div>
-                <p className="font-medium text-green-600 dark:text-green-400">What worked</p>
-                <ul className="list-inside list-disc">
-                  {c.positiveFeedback.map((f, i) => (
-                    <li key={i}>{f}</li>
-                  ))}
-                </ul>
+
+          <div className="mt-5 flex flex-col gap-5 text-sm">
+            {(c.positiveFeedback.length > 0 || c.improvementAreas.length > 0) && (
+              <div className="grid gap-4 border-t border-(--border) pt-5 sm:grid-cols-2">
+                {c.positiveFeedback.length > 0 && (
+                  <FeedbackList title="What worked" items={c.positiveFeedback} tone="positive" />
+                )}
+                {c.improvementAreas.length > 0 && (
+                  <FeedbackList
+                    title="Areas to improve"
+                    items={c.improvementAreas}
+                    tone="negative"
+                  />
+                )}
               </div>
             )}
-            {c.improvementAreas.length > 0 && (
-              <div>
-                <p className="font-medium text-amber-600 dark:text-amber-400">Areas to improve</p>
-                <ul className="list-inside list-disc">
-                  {c.improvementAreas.map((f, i) => (
-                    <li key={i}>{f}</li>
-                  ))}
-                </ul>
+
+            <div className="border-t border-(--border) pt-5">
+              {c.improvedAnswerOutline.length > 0 && (
+                <div className="mb-4">
+                  <p className="mb-1.5 text-xs font-medium tracking-wide text-black/50 uppercase dark:text-white/50">
+                    Suggested outline
+                  </p>
+                  <ol className="flex flex-col gap-1">
+                    {c.improvedAnswerOutline.map((step, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="text-black/40 dark:text-white/40">{i + 1}.</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              <div className="mb-4">
+                <p className="mb-1.5 text-xs font-medium tracking-wide text-black/50 uppercase dark:text-white/50">
+                  A stronger answer might sound like
+                </p>
+                <p className="rounded-lg border-l-2 border-(--accent) bg-(--surface) p-3">
+                  {c.sampleImprovedAnswer}
+                </p>
               </div>
-            )}
-            {c.improvedAnswerOutline.length > 0 && (
+
               <div>
-                <p className="font-medium">Suggested outline for a stronger answer</p>
-                <ol className="list-inside list-decimal">
-                  {c.improvedAnswerOutline.map((step, i) => (
-                    <li key={i}>{step}</li>
-                  ))}
-                </ol>
+                <p className="mb-1 text-xs font-medium tracking-wide text-black/50 uppercase dark:text-white/50">
+                  Practice exercise
+                </p>
+                <p>{c.practiceExercise}</p>
               </div>
-            )}
-            <div>
-              <p className="font-medium">A stronger answer might sound like</p>
-              <p className="mt-1 rounded-md border border-(--border) p-3">
-                {c.sampleImprovedAnswer}
-              </p>
-            </div>
-            <div>
-              <p className="font-medium">Practice exercise</p>
-              <p>{c.practiceExercise}</p>
             </div>
           </div>
+
           <button
             onClick={continueAfterFeedback}
             className="mt-6 rounded-md bg-(--accent) px-5 py-2.5 font-medium text-white"

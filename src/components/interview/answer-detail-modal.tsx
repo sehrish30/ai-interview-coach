@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { PriorityBadge } from "@/components/interview/priority-badge";
+import { ScoreBadge } from "@/components/interview/score-badge";
+import { FeedbackList } from "@/components/interview/feedback-list";
 
 interface AnswerDetail {
   question: {
@@ -183,48 +185,6 @@ export function AnswerDetailModal({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-const SCORE_STYLES = [
-  { min: 80, className: "bg-green-500/10 text-green-600 dark:text-green-400" },
-  { min: 60, className: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-  { min: 0, className: "bg-red-500/10 text-red-600 dark:text-red-400" },
-];
-
-function ScoreBadge({ score }: { score: number }) {
-  const style = SCORE_STYLES.find((s) => score >= s.min)!;
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style.className}`}>
-      {Math.round(score)}/100
-    </span>
-  );
-}
-
-function FeedbackList({
-  title,
-  items,
-  tone,
-}: {
-  title: string;
-  items: string[];
-  tone: "positive" | "negative";
-}) {
-  const dotClassName = tone === "positive" ? "bg-green-500" : "bg-amber-500";
-  return (
-    <div>
-      <p className="mb-1.5 text-xs font-medium tracking-wide text-black/50 uppercase dark:text-white/50">
-        {title}
-      </p>
-      <ul className="flex flex-col gap-1.5">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-2">
-            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dotClassName}`} />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
