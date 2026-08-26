@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { listSessionsForUser } from "@/server/repositories/session-repository";
+import { DeleteSessionButton } from "@/components/interview/delete-session-button";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
@@ -54,12 +55,18 @@ export default async function DashboardPage() {
                   {STATUS_LABEL[s.status] ?? s.status}
                 </p>
               </div>
-              <Link
-                href={s.status === "completed" ? `/interviews/${s.id}/report` : `/interviews/${s.id}`}
-                className="text-sm font-medium text-(--accent) underline underline-offset-2"
-              >
-                {s.status === "completed" ? "View report" : "Continue"}
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  href={s.status === "completed" ? `/interviews/${s.id}/report` : `/interviews/${s.id}`}
+                  className="text-sm font-medium text-(--accent) underline underline-offset-2"
+                >
+                  {s.status === "completed" ? "View report" : "Continue"}
+                </Link>
+                <DeleteSessionButton
+                  sessionId={s.id}
+                  label={s.target_company ? `${s.target_role} @ ${s.target_company}` : s.target_role}
+                />
+              </div>
             </li>
           ))}
         </ul>
