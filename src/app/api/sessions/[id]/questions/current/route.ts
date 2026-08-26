@@ -29,6 +29,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({
       question: current,
+      questions,
       progress: {
         currentQuestionIndex: session.current_question_index,
         maxQuestions: session.max_questions,
