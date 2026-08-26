@@ -60,17 +60,24 @@ export function AnswerDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-(--border) bg-(--background) p-6"
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-(--border) bg-(--background) shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-start justify-between">
-          <p className="text-xs font-medium uppercase tracking-wide text-(--accent)">
-            Q{questionNumber} (read-only)
-          </p>
+        {/* Header stays put while the body scrolls, so context never gets lost. */}
+        <div className="flex shrink-0 items-center justify-between border-b border-(--border) bg-(--background) px-6 py-4">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium">
+              Question {questionNumber}
+              {detail?.question.isFollowUp ? " · follow-up" : ""}
+            </p>
+            <span className="rounded-full border border-(--border) px-2 py-0.5 text-xs text-black/50 dark:text-white/50">
+              Read-only
+            </span>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -80,87 +87,144 @@ export function AnswerDetailModal({
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        <div className="overflow-y-auto px-6 py-5">
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          {!error && !detail && (
+            <p className="text-sm text-black/60 dark:text-white/60">Loading…</p>
+          )}
 
-        {!error && !detail && <p className="text-sm text-black/60 dark:text-white/60">Loading…</p>}
-
-        {detail && (
-          <div className="flex flex-col gap-4 text-sm">
-            <div>
-              <p className="mb-1 text-xs uppercase tracking-wide text-(--accent)">
-                {detail.question.category}
-                {detail.question.isFollowUp ? " · follow-up" : ""}
-              </p>
-              <h3 className="text-lg font-medium">{detail.question.text}</h3>
-            </div>
-
-            <div>
-              <p className="mb-1 font-medium">Your answer</p>
-              <p className="whitespace-pre-wrap rounded-md border border-(--border) p-3 text-black/80 dark:text-white/80">
-                {detail.answerText}
-              </p>
-            </div>
-
-            {detail.answerScore !== null && (
-              <p className="font-medium">Score: {detail.answerScore}/100</p>
-            )}
-
-            {detail.evaluation && (
-              <>
-                {detail.evaluation.strengths.length > 0 && (
-                  <div>
-                    <p className="font-medium text-green-600 dark:text-green-400">Strengths</p>
-                    <ul className="list-inside list-disc">
-                      {detail.evaluation.strengths.map((s, i) => (
-                        <li key={i}>{s}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {detail.evaluation.weaknesses.length > 0 && (
-                  <div>
-                    <p className="font-medium text-amber-600 dark:text-amber-400">Weaknesses</p>
-                    <ul className="list-inside list-disc">
-                      {detail.evaluation.weaknesses.map((w, i) => (
-                        <li key={i}>{w}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </>
-            )}
-
-            {detail.coaching ? (
-              <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <p className="font-medium">Coaching</p>
-                  <PriorityBadge priority={detail.coaching.priority} />
-                </div>
-                {detail.coaching.improvedAnswerOutline.length > 0 && (
-                  <>
-                    <p className="mb-1 font-medium">Suggested outline for a stronger answer</p>
-                    <ol className="mb-2 list-inside list-decimal">
-                      {detail.coaching.improvedAnswerOutline.map((step, i) => (
-                        <li key={i}>{step}</li>
-                      ))}
-                    </ol>
-                  </>
-                )}
-                <p className="mb-1 font-medium">A stronger answer might sound like</p>
-                <p className="rounded-md border border-(--border) p-3">
-                  {detail.coaching.sampleImprovedAnswer}
+          {detail && (
+            <div className="flex flex-col gap-5 text-sm">
+              <section>
+                <p className="mb-1.5 text-xs font-medium tracking-wide text-(--accent) uppercase">
+                  {detail.question.category}
                 </p>
-                <p className="mt-2 font-medium">Practice exercise</p>
-                <p>{detail.coaching.practiceExercise}</p>
-              </div>
-            ) : (
-              <p className="text-xs text-black/50 dark:text-white/50">
-                Detailed coaching is only generated per-answer in Practice mode.
-              </p>
-            )}
-          </div>
-        )}
+                <h3 className="text-lg leading-snug font-medium">{detail.question.text}</h3>
+              </section>
+
+              <section className="border-t border-(--border) pt-5">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="font-medium">Your answer</p>
+                  {detail.answerScore !== null && <ScoreBadge score={detail.answerScore} />}
+                </div>
+                <p className="rounded-lg bg-(--surface) p-3 whitespace-pre-wrap text-black/80 dark:text-white/80">
+                  {detail.answerText}
+                </p>
+              </section>
+
+              {detail.evaluation &&
+                (detail.evaluation.strengths.length > 0 ||
+                  detail.evaluation.weaknesses.length > 0) && (
+                  <section className="grid gap-4 border-t border-(--border) pt-5 sm:grid-cols-2">
+                    {detail.evaluation.strengths.length > 0 && (
+                      <FeedbackList
+                        title="Strengths"
+                        items={detail.evaluation.strengths}
+                        tone="positive"
+                      />
+                    )}
+                    {detail.evaluation.weaknesses.length > 0 && (
+                      <FeedbackList
+                        title="Weaknesses"
+                        items={detail.evaluation.weaknesses}
+                        tone="negative"
+                      />
+                    )}
+                  </section>
+                )}
+
+              <section className="border-t border-(--border) pt-5">
+                {detail.coaching ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">Coaching</p>
+                      <PriorityBadge priority={detail.coaching.priority} />
+                    </div>
+
+                    {detail.coaching.improvedAnswerOutline.length > 0 && (
+                      <div>
+                        <p className="mb-1.5 text-xs font-medium tracking-wide text-black/50 uppercase dark:text-white/50">
+                          Suggested outline
+                        </p>
+                        <ol className="flex flex-col gap-1">
+                          {detail.coaching.improvedAnswerOutline.map((step, i) => (
+                            <li key={i} className="flex gap-2">
+                              <span className="text-black/40 dark:text-white/40">{i + 1}.</span>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+
+                    <div>
+                      <p className="mb-1.5 text-xs font-medium tracking-wide text-black/50 uppercase dark:text-white/50">
+                        A stronger answer might sound like
+                      </p>
+                      <p className="rounded-lg border-l-2 border-(--accent) bg-(--surface) p-3">
+                        {detail.coaching.sampleImprovedAnswer}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="mb-1 text-xs font-medium tracking-wide text-black/50 uppercase dark:text-white/50">
+                        Practice exercise
+                      </p>
+                      <p>{detail.coaching.practiceExercise}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-black/50 dark:text-white/50">
+                    Detailed coaching is only generated per-answer in Practice mode.
+                  </p>
+                )}
+              </section>
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+const SCORE_STYLES = [
+  { min: 80, className: "bg-green-500/10 text-green-600 dark:text-green-400" },
+  { min: 60, className: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+  { min: 0, className: "bg-red-500/10 text-red-600 dark:text-red-400" },
+];
+
+function ScoreBadge({ score }: { score: number }) {
+  const style = SCORE_STYLES.find((s) => score >= s.min)!;
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style.className}`}>
+      {Math.round(score)}/100
+    </span>
+  );
+}
+
+function FeedbackList({
+  title,
+  items,
+  tone,
+}: {
+  title: string;
+  items: string[];
+  tone: "positive" | "negative";
+}) {
+  const dotClassName = tone === "positive" ? "bg-green-500" : "bg-amber-500";
+  return (
+    <div>
+      <p className="mb-1.5 text-xs font-medium tracking-wide text-black/50 uppercase dark:text-white/50">
+        {title}
+      </p>
+      <ul className="flex flex-col gap-1.5">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dotClassName}`} />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
