@@ -63,3 +63,14 @@ button:not(:disabled):active {
   background: var(--accent-soft);
   color: #04101f;
 }
+
+/* Force a clean light background for Print / Save as PDF, regardless of
+   the viewer's light/dark theme — printed pages shouldn't carry the app's
+   dark chrome or radial background glow. */
+@media print {
+  body {
+    background-color: white;
+    background-image: none;
+    color: black;
+  }
+}

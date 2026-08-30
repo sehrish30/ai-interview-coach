@@ -7,6 +7,7 @@ import { AnswerDetailModal } from "@/components/interview/answer-detail-modal";
 import { PriorityBadge } from "@/components/interview/priority-badge";
 import { ScoreBadge } from "@/components/interview/score-badge";
 import { FeedbackList } from "@/components/interview/feedback-list";
+import { parseApiError } from "@/lib/parse-api-error";
 
 interface Question {
   id: string;
@@ -55,8 +56,12 @@ export default function InterviewRoomPage({ params }: { params: Promise<{ id: st
     setStatus("loading");
     const res = await fetch(`/api/sessions/${id}/questions/current`);
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.message ?? "Could not load the current question");
+      const { code, message } = await parseApiError(res);
+      if (code === "unauthorized") {
+        router.push("/login");
+        return;
+      }
+      setError(message);
       setStatus("error");
       return;
     }
@@ -66,7 +71,7 @@ export default function InterviewRoomPage({ params }: { params: Promise<{ id: st
     setProgress(body.progress);
     setAnswerText("");
     setStatus("answering");
-  }, [id]);
+  }, [id, router]);
 
   useEffect(() => {
     // Fetching the current question on mount is the external synchronization
@@ -85,8 +90,12 @@ export default function InterviewRoomPage({ params }: { params: Promise<{ id: st
       body: JSON.stringify({ questionId: question.id, answerText }),
     });
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.message ?? "Could not submit that answer");
+      const { code, message } = await parseApiError(res);
+      if (code === "unauthorized") {
+        router.push("/login");
+        return;
+      }
+      setError(message);
       setStatus("error");
       return;
     }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { PriorityBadge } from "@/components/interview/priority-badge";
 import { ScoreBadge } from "@/components/interview/score-badge";
 import { FeedbackList } from "@/components/interview/feedback-list";
+import { parseApiError } from "@/lib/parse-api-error";
 
 interface AnswerDetail {
   question: {
@@ -37,6 +39,7 @@ export function AnswerDetailModal({
   questionNumber: number;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [detail, setDetail] = useState<AnswerDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,8 +50,12 @@ export function AnswerDetailModal({
       const res = await fetch(`/api/sessions/${sessionId}/questions/${questionId}`);
       if (cancelled) return;
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setError(body.message ?? "Could not load this answer");
+        const { code, message } = await parseApiError(res);
+        if (code === "unauthorized") {
+          router.push("/login");
+          return;
+        }
+        setError(message);
         return;
       }
       setDetail(await res.json());
@@ -58,7 +65,7 @@ export function AnswerDetailModal({
     return () => {
       cancelled = true;
     };
-  }, [sessionId, questionId]);
+  }, [sessionId, questionId, router]);
 
   return (
     <div

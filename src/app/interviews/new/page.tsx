@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { parseApiError } from "@/lib/parse-api-error";
 
 type Stage = "form" | "preparing" | "error";
 
@@ -32,10 +33,15 @@ export default function NewInterviewPage() {
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch("/api/resume/parse", { method: "POST", body: formData });
-      const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(body.message ?? "Could not parse this PDF");
+        const { code, message } = await parseApiError(res);
+        if (code === "unauthorized") {
+          router.push("/login");
+          return;
+        }
+        throw new Error(message);
       }
+      const body = await res.json();
       setResumeText(body.text);
       setResumeParseStatus("idle");
     } catch (err) {
@@ -51,9 +57,13 @@ export default function NewInterviewPage() {
       body: JSON.stringify({ resumeText, jobDescriptionText }),
     });
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
+      const { code, message } = await parseApiError(res);
+      if (code === "unauthorized") {
+        router.push("/login");
+        return;
+      }
       setStage("error");
-      setError(body.message ?? "Preparation failed. You can try again.");
+      setError(message);
       return;
     }
     router.push(`/interviews/${id}`);
@@ -80,8 +90,12 @@ export default function NewInterviewPage() {
           }),
         });
         if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.message ?? "Could not create session");
+          const { code, message } = await parseApiError(res);
+          if (code === "unauthorized") {
+            router.push("/login");
+            return;
+          }
+          throw new Error(message);
         }
         const created = await res.json();
         id = created.id;

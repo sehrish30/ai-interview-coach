@@ -3,21 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSession } from "@/server/repositories/session-repository";
 import { getFinalReport } from "@/server/repositories/report-repository";
 import { finalizationWorkflow } from "@/mastra/workflows/finalization-workflow";
-import type { ReportNarrative } from "@/mastra/schemas/report";
-
-interface StoredReport {
-  overallScore: number;
-  categoryScores: { category: string; score: number; weight: number; answerCount: number }[];
-  answerSummaries: {
-    questionText: string;
-    category: string;
-    answerScore: number;
-    strengths: string[];
-    weaknesses: string[];
-  }[];
-  narrative: ReportNarrative;
-  disclaimer: string;
-}
+import { PrintReportButton } from "@/components/reports/print-report-button";
+import type { StoredReport } from "@/lib/report-types";
 
 export default async function FinalReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,11 +33,30 @@ export default async function FinalReportPage({ params }: { params: Promise<{ id
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="text-2xl font-semibold">{session.target_role} — Final Report</h1>
-      <p className="mt-1 text-sm text-black/60 dark:text-white/60">
-        Readiness: <span className="font-medium">{reportRow.readiness_level}</span> · Recommendation:{" "}
-        {narrative.recommendation}
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{session.target_role} — Final Report</h1>
+          <p className="mt-1 text-sm text-black/60 dark:text-white/60">
+            Readiness: <span className="font-medium">{reportRow.readiness_level}</span> ·
+            Recommendation: {narrative.recommendation}
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-2 print:hidden">
+          <a
+            href={`/api/sessions/${id}/report/export?format=md`}
+            className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5"
+          >
+            Markdown
+          </a>
+          <a
+            href={`/api/sessions/${id}/report/export?format=json`}
+            className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5"
+          >
+            JSON
+          </a>
+          <PrintReportButton />
+        </div>
+      </div>
 
       <div className="mt-6 rounded-lg border border-(--border) p-6">
         <p className="text-4xl font-semibold">{report.overallScore}/100</p>
