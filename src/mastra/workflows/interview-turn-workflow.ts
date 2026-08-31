@@ -6,7 +6,7 @@ import { interviewerAgent } from "@/mastra/agents/interviewer-agent";
 import { evaluationOutputSchema } from "@/mastra/schemas/evaluation";
 import { coachingOutputSchema } from "@/mastra/schemas/coaching";
 import { interviewTurnDecisionSchema } from "@/mastra/schemas/interviewer";
-import { getAgentModel } from "@/mastra/model";
+import { getAgentModel, FAST_FAIL_MODEL_SETTINGS } from "@/mastra/model";
 import { runAndLogAgent } from "@/server/services/agent-run-logger";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { computeAnswerScore } from "@/server/services/scoring";
@@ -14,6 +14,7 @@ import { canAskAnotherQuestion } from "@/server/services/session-state";
 import {
   getQuestion,
   insertAnswer,
+  deleteUnevaluatedAnswersForQuestion,
   markQuestionAnswered,
   saveEvaluation,
   saveCoaching,
@@ -48,13 +49,19 @@ const evaluateStep = createStep({
     const supabase = createSupabaseServiceRoleClient();
     const question = await getQuestion(supabase, inputData.questionId);
 
+    await deleteUnevaluatedAnswersForQuestion(supabase, inputData.questionId);
     const answer = await insertAnswer(supabase, {
       sessionId: inputData.sessionId,
       questionId: inputData.questionId,
       answerText: inputData.answerText,
     });
-    await markQuestionAnswered(supabase, inputData.questionId);
 
+    // Only mark the question answered once evaluation actually succeeds.
+    // If the agent call throws (rate limit, provider outage, etc.), the
+    // question must stay "pending" so the candidate can retry — otherwise
+    // it's permanently stuck "answered" with no evaluation, no coaching,
+    // and the turn workflow never reaches decide-next to generate the
+    // next question or complete the session.
     const response = await runAndLogAgent({
       sessionId: inputData.sessionId,
       agentName: evaluatorAgent.name,
@@ -64,7 +71,7 @@ const evaluateStep = createStep({
         evaluatorAgent.generate(
           `QUESTION (${question.category}, ${question.difficulty}): ${question.text}\n\n` +
             `CANDIDATE ANSWER:\n${inputData.answerText}`,
-          { structuredOutput: { schema: evaluationOutputSchema } },
+          { structuredOutput: { schema: evaluationOutputSchema }, modelSettings: FAST_FAIL_MODEL_SETTINGS },
         ),
       summarize: (r) => `relevance=${r.object.scores.relevance}`,
     });
@@ -77,6 +84,7 @@ const evaluateStep = createStep({
       scores: response.object.scores,
       evaluation: response.object,
     });
+    await markQuestionAnswered(supabase, inputData.questionId);
 
     return {
       sessionId: inputData.sessionId,
@@ -111,7 +119,7 @@ const coachStep = createStep({
       run: () =>
         coachReportAgent.generate(
           `Coach this answer. Evaluation: ${JSON.stringify(inputData.evaluation)}`,
-          { structuredOutput: { schema: coachingOutputSchema } },
+          { structuredOutput: { schema: coachingOutputSchema }, modelSettings: FAST_FAIL_MODEL_SETTINGS },
         ),
       summarize: (r) => r.object.priority,
     });
@@ -183,7 +191,7 @@ const decideNextStep = createStep({
             `Follow-up budget remaining for the last question: ${followUpBudgetRemaining}\n` +
             `Questions asked: ${updatedSession.current_question_index} / ${updatedSession.max_questions}\n` +
             `Decide the next step.`,
-          { structuredOutput: { schema: interviewTurnDecisionSchema } },
+          { structuredOutput: { schema: interviewTurnDecisionSchema }, modelSettings: FAST_FAIL_MODEL_SETTINGS },
         ),
       summarize: (r) => (r.object.shouldAskFollowUp ? "follow-up" : "next-question"),
     });

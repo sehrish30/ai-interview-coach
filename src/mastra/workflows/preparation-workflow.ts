@@ -6,7 +6,7 @@ import { interviewerAgent } from "@/mastra/agents/interviewer-agent";
 import { intakeAnalysisOutputSchema } from "@/mastra/schemas/intake-analysis";
 import { researchOutputSchema } from "@/mastra/schemas/research";
 import { interviewPlanSchema, generatedQuestionSchema } from "@/mastra/schemas/interviewer";
-import { getAgentModel } from "@/mastra/model";
+import { getAgentModel, FAST_FAIL_MODEL_SETTINGS } from "@/mastra/model";
 import { runAndLogAgent } from "@/server/services/agent-run-logger";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import {
@@ -72,7 +72,7 @@ const analyzeAndMatchStep = createStep({
       run: () =>
         intakeAnalysisAgent.generate(
           `RESUME:\n${inputData.resumeText}\n\nJOB DESCRIPTION:\n${inputData.jobDescriptionText}`,
-          { structuredOutput: { schema: intakeAnalysisOutputSchema } },
+          { structuredOutput: { schema: intakeAnalysisOutputSchema }, modelSettings: FAST_FAIL_MODEL_SETTINGS },
         ),
       summarize: (r) => `overallMatchScore=${r.object.roleMatch.overallMatchScore}`,
     });
@@ -124,7 +124,7 @@ const researchStep = createStep({
         researchAgent.generate(
           `Research company "${session.target_company}" for a candidate interviewing for "${session.target_role}". ` +
             `If your web-search tool returns no results, say research is unavailable rather than guessing.`,
-          { structuredOutput: { schema: researchOutputSchema } },
+          { structuredOutput: { schema: researchOutputSchema }, modelSettings: FAST_FAIL_MODEL_SETTINGS },
         ),
       summarize: (r) => `${r.object.sources.length} sources`,
     });
@@ -165,7 +165,7 @@ const planAndFirstQuestionStep = createStep({
             `Total questions: ${session.max_questions}\n` +
             `Intake analysis: ${JSON.stringify(inputData.intakeAnalysis)}\n` +
             `Company research: ${inputData.research ? JSON.stringify(inputData.research) : "none"}`,
-          { structuredOutput: { schema: interviewPlanSchema } },
+          { structuredOutput: { schema: interviewPlanSchema }, modelSettings: FAST_FAIL_MODEL_SETTINGS },
         ),
       summarize: (r) => `${r.object.categories.length} categories, ${r.object.totalQuestions} questions`,
     });
@@ -181,7 +181,7 @@ const planAndFirstQuestionStep = createStep({
         interviewerAgent.generate(
           `Generate the first question for this interview plan: ${JSON.stringify(planResponse.object)}\n` +
             `Intake analysis: ${JSON.stringify(inputData.intakeAnalysis)}`,
-          { structuredOutput: { schema: generatedQuestionSchema } },
+          { structuredOutput: { schema: generatedQuestionSchema }, modelSettings: FAST_FAIL_MODEL_SETTINGS },
         ),
       summarize: (r) => r.object.category,
     });

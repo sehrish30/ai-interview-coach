@@ -100,6 +100,18 @@ export async function insertAnswer(
   return data;
 }
 
+/** A question only reaches record-and-evaluate while its status is
+ * "pending" (the answers route rejects resubmission otherwise), so any
+ * existing candidate_answers row for it is guaranteed to be an orphan from
+ * a previously failed evaluation attempt (evaluation/coaching require a
+ * successful evaluation first, which requires the question to already be
+ * marked "answered"). Clear it before inserting a fresh attempt so a retry
+ * never leaves two answer rows for the same question. */
+export async function deleteUnevaluatedAnswersForQuestion(client: Client, questionId: string) {
+  const { error } = await client.from("candidate_answers").delete().eq("question_id", questionId);
+  if (error) throw error;
+}
+
 export async function saveEvaluation(
   client: Client,
   input: { sessionId: string; answerId: string; scores: Json; evaluation: Json },

@@ -55,6 +55,14 @@ button:not(:disabled):hover {
   filter: brightness(1.08);
 }
 
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 button:not(:disabled):active {
   transform: translateY(1px);
 }

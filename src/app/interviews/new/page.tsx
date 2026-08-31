@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseApiError } from "@/lib/parse-api-error";
+import { LoadingStatus } from "@/components/interview/loading-status";
 
 type Stage = "form" | "preparing" | "error";
 
@@ -112,11 +113,14 @@ export default function NewInterviewPage() {
     return (
       <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-6 text-center">
         <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-(--accent) border-t-transparent" />
-        <p className="font-medium">Analyzing your resume, matching it to the role…</p>
-        <p className="mt-1 text-sm text-black/60 dark:text-white/60">
-          This runs the Intake &amp; Analysis agent, optional company research, and builds your
-          interview plan. Usually takes under a minute.
-        </p>
+        <LoadingStatus
+          messages={[
+            "Analyzing your resume…",
+            "Matching you to the role…",
+            researchEnabled ? "Researching the company…" : "Building your interview plan…",
+            "Generating your first question…",
+          ]}
+        />
       </main>
     );
   }

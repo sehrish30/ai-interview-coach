@@ -3,7 +3,7 @@ import { z } from "zod";
 import { coachReportAgent } from "@/mastra/agents/coach-report-agent";
 import { reportNarrativeSchema } from "@/mastra/schemas/report";
 import { interviewPlanSchema } from "@/mastra/schemas/interviewer";
-import { getAgentModel } from "@/mastra/model";
+import { getAgentModel, FAST_FAIL_MODEL_SETTINGS } from "@/mastra/model";
 import { runAndLogAgent } from "@/server/services/agent-run-logger";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import {
@@ -106,7 +106,7 @@ const narrateAndSaveStep = createStep({
             `Deterministic readiness level (already computed): ${inputData.readinessLevel}\n` +
             `Category scores: ${JSON.stringify(inputData.categoryScores)}\n` +
             `Per-answer summaries: ${JSON.stringify(inputData.answerSummaries)}`,
-          { structuredOutput: { schema: reportNarrativeSchema } },
+          { structuredOutput: { schema: reportNarrativeSchema }, modelSettings: FAST_FAIL_MODEL_SETTINGS },
         ),
       summarize: (r) => r.object.recommendation,
     });

@@ -8,6 +8,7 @@ import { PriorityBadge } from "@/components/interview/priority-badge";
 import { ScoreBadge } from "@/components/interview/score-badge";
 import { FeedbackList } from "@/components/interview/feedback-list";
 import { parseApiError } from "@/lib/parse-api-error";
+import { LoadingStatus } from "@/components/interview/loading-status";
 
 interface Question {
   id: string;
@@ -283,6 +284,18 @@ export default function InterviewRoomPage({ params }: { params: Promise<{ id: st
         >
           {status === "submitting" ? "Evaluating…" : "Submit answer"}
         </button>
+        {status === "submitting" && (
+          <div className="mt-3">
+            <LoadingStatus
+              messages={[
+                "Evaluating your answer…",
+                "Checking technical accuracy…",
+                "Preparing feedback…",
+                "Selecting your next question…",
+              ]}
+            />
+          </div>
+        )}
       </main>
     </WithSidebar>
   );
