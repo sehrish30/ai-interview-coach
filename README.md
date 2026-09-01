@@ -12,6 +12,14 @@ Built with **Mastra AI** (agents + workflows), **Next.js App Router**,
 > see [Architecture](#architecture) and [Known limitations](#known-limitations)
 > for what's intentionally deferred to a later pass.
 
+## Demo
+
+<video src="./ai-interview-demo.mp4" controls muted title="AI Interview Coach demo"></video>
+
+If your viewer doesn't render the player above, [watch/download the demo
+video directly](./ai-interview-demo.mp4) — clicking it on GitHub opens it in
+their built-in video viewer.
+
 ## Feature list
 
 - Email/password auth (Supabase Auth) with per-user Row Level Security on
@@ -151,15 +159,30 @@ defaults to `false`; the app is fully usable through text.
 - **Synchronous workflow execution**: preparation, turn, and finalization
   workflows run inline in the request instead of a background job queue —
   fine for a single-user demo, not for concurrent production traffic.
-- **No file upload, no export (PDF/Markdown), no development-mode agent-run
-  debug page, no scorers/evals** — all listed in the original spec, all
-  reasonable next passes once this slice is validated.
+- **No development-mode agent-run debug page, no scorers/evals** — both
+  listed in the original spec, reasonable next passes once this slice is
+  validated. (Resume upload and report export are implemented — see below.)
+
+## Report export
+
+The final report page offers three export paths:
+
+- **Markdown** and **JSON** — `GET /api/sessions/:id/report/export?format=md|json`
+  returns the report as a downloadable file (`Content-Disposition: attachment`).
+  Formatting logic lives in `src/server/services/report-markdown.ts` — plain
+  deterministic TypeScript, not an agent call.
+- **PDF** — via the browser's own "Print / Save as PDF," rather than a
+  PDF-generation dependency (puppeteer, jsPDF, etc.). A `@media print` rule
+  in `globals.css` forces a clean light background regardless of theme, and
+  the export button row is hidden (`print:hidden`) from the printed output.
 
 ## Next enhancements
 
-1. PDF/DOCX upload + document-ingestion workflow with chunking/embeddings.
-2. Report export (Markdown/PDF) and an agent-run debug page.
-3. Mastra scorers/evals for question personalization, non-repetition, and
+1. Document-ingestion workflow with chunking/embeddings for RAG over
+   uploaded resumes/JDs (currently full text is sent directly to the
+   Intake & Analysis agent, which is fine at this volume but doesn't scale
+   to a knowledge base).
+2. Mastra scorers/evals for question personalization, non-repetition, and
    coaching actionability.
-4. Background job execution for workflows instead of inline request handling.
-5. Voice mode behind `ENABLE_VOICE_INTERVIEW`.
+3. Background job execution for workflows instead of inline request handling.
+4. Voice mode behind `ENABLE_VOICE_INTERVIEW`.
